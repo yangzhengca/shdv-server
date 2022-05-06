@@ -41,7 +41,10 @@ const pool = new Pool({
 export const getData = ( req: Request, res: Response ): void => {
   const SN = req.params.sn;
 
-  const sql: string = `SELECT "Wattage", "DateTime", "Device_ID" FROM readings WHERE  "Serial_Number"=$1`;
+  // const sql: string = `SELECT "Wattage", "DateTime", "Device_ID" FROM readings WHERE  "Serial_Number"=$1`;
+
+  const sql: string = `SELECT SUM("Wattage") AS "Wattage", "DateTime"
+  FROM readings WHERE "Serial_Number"=$1 GROUP BY "DateTime" ORDER BY "DateTime";`;
   
   pool.query(sql, [`${SN}`], (error: Error, results: any) => {
     if ( error ) {
