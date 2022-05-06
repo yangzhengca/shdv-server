@@ -1,16 +1,27 @@
 import express, { Application, Request, Response, NextFunction } from "express";
 import * as db from "./queries";
+import cors from "cors";
 
 const app:Application = express();
 
 const PORT = process.env.PORT || 5000;
 
 
-
+app.use(cors());
 
 app.get('/', (req: Request, res:Response, next: NextFunction) => {
   res.json({"message": "Hello, welcome to SHDV server!"});
 });
+
+
+// // SN dropdown list query
+// app.get('/api/id', db.getDeviceID);
+
+// get data by sn
+app.get('/api/sn/:sn', db.getData);
+
+// SN dropdown list query
+app.get('/api/sns', db.getSN);
 
 // test query
 app.get('/api/test', db.testQuery);
