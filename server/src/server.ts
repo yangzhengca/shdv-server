@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use('/api', smartHomeRouter);
 
-app.get('/', (req: Request, res:Response, next: NextFunction) => {
+app.get('/', ( req: Request, res:Response ) => {
   res.json({"message": "Welcome to SHDV server!"});
 });
 

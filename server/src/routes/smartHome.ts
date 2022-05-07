@@ -3,20 +3,17 @@ const router = express.Router();
 import * as db from "../controllers/smartHome";
 
 
-
-
-
 // get data
-router.get('/data', db.getData);
+router.get('/data', db.getDataCache, db.getData);
 
-// get Serial Number dropdown list
-router.get('/sns', db.getSerialNumbers);
+// get Serial Numbers
+router.get('/sns', db.getSerialNumbersCache, db.getSerialNumbers);
 
-// get Device ID dropdown list
+// get device IDs which has chosen serial number
 router.get('/dids/:sn', db.getDeviceIDs);
 
-// test query
-router.get('/test', db.testQuery);
+// // used for testing postgresql database
+// router.get('/test', db.testQuery);
 
 
 module.exports = router;
