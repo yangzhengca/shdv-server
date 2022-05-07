@@ -14,19 +14,19 @@ app.get('/', (req: Request, res:Response, next: NextFunction) => {
 });
 
 
-// // SN dropdown list query
-// app.get('/api/id', db.getDeviceID);
-
-// get data by sn
-app.get('/api/sn/:sn', db.getData);
+// new getdata api
+app.get('/api/data', db.getData);
 
 // SN dropdown list query
-app.get('/api/sns', db.getSN);
+app.get('/api/sns', db.getSerialNumbers);
+
+// DID dropdown list query
+app.get('/api/dids/:sn', db.getDeviceIDs);
 
 // test query
 app.get('/api/test', db.testQuery);
 
-// get all data, limit 5
+// get all data, limit 5 use for test
 app.get('/api/all', db.getAllData);
 
 
