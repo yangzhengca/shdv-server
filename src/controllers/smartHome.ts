@@ -26,43 +26,45 @@ const pool = new Pool({
 
 // get data from database and send to api
 export const getData = (req: Request, res: Response): void => {
+  // calculate offset value
+  const offSet = (Number(req.query.page)-1)*1440;
 
   // only have serial number in query string
-  if (req.query.serialNumber !== "undefined" &&
-  req.query.deviceID == "undefined") {
+  if (req.query.serialNumber !== "" &&
+  req.query.deviceID == "") {
     const sql: string = `SELECT SUM("Wattage") AS "Wattage", "DateTime"
-    FROM readings WHERE "Serial_Number"=$1 GROUP BY "DateTime" ORDER BY "DateTime";`;
+    FROM readings WHERE "Serial_Number"=$1 GROUP BY "DateTime" ORDER BY "DateTime" DESC OFFSET ${offSet} LIMIT 1440;`;
 
     pool.query(sql, [`${req.query.serialNumber}`], (error: Error, results: QueryResult) => {
       if (error) {
         console.error("Error executing query", error.stack);
       }
-      myCache.set(`${req.query.serialNumber}-data`, results.rows);
+      myCache.set(`${req.query.page}-${req.query.serialNumber}-${req.query.deviceID}`, results.rows);
       res.status(200).json(results.rows);
     });
-  } else if( req.query.serialNumber !== "undefined" &&
-  req.query.deviceID !== "undefined" ) {
+  } else if( req.query.serialNumber !== "" &&
+  req.query.deviceID !== "" ) {
     // have both serial number and device ID in query string
     const sql: string = `SELECT SUM("Wattage") AS "Wattage", "DateTime"
-    FROM readings WHERE "Serial_Number"=$1 AND "Device_ID"=$2 GROUP BY "DateTime" ORDER BY "DateTime";`;
+    FROM readings WHERE "Serial_Number"=$1 AND "Device_ID"=$2 GROUP BY "DateTime" ORDER BY "DateTime" DESC OFFSET ${offSet} LIMIT 1440;`;
 
     pool.query(sql, [`${req.query.serialNumber}`,`${req.query.deviceID}`], (error: Error, results: QueryResult) => {
       if (error) {
         console.error("Error executing query", error.stack);
       }
-      myCache.set(`${req.query.serialNumber}-${req.query.deviceID}-data`, results.rows);
+      myCache.set(`${req.query.page}-${req.query.serialNumber}-${req.query.deviceID}`, results.rows);
       res.status(200).json(results.rows);
     });
   } else {
     // with no serial number or device ID in query string. (the situation which only have device ID in query string has prevent by the client logic. if use postman to override that, will return all data)
     const sql: string = `SELECT SUM("Wattage") AS "Wattage", "DateTime"
-    FROM readings GROUP BY "DateTime" ORDER BY "DateTime";`;
+    FROM readings GROUP BY "DateTime" ORDER BY "DateTime" DESC OFFSET ${offSet} LIMIT 1440;`;
 
     pool.query(sql, (error: Error, results: QueryResult) => {
       if (error) {
         console.error("Error executing query", error.stack);
       }
-      myCache.set('all', results.rows);
+      myCache.set(`${req.query.page}-${req.query.serialNumber}-${req.query.deviceID}`, results.rows);
       res.status(200).json(results.rows);
     });
   }
@@ -71,17 +73,8 @@ export const getData = (req: Request, res: Response): void => {
 
 // get data from cache middleware 
 export const getDataCache = ( req: Request, res: Response, next: NextFunction ) => {
-  if (
-    req.query.serialNumber == "undefined" &&
-    req.query.deviceID == "undefined" && myCache.has("all")
-  ) {
-    return res.status(200).send(myCache.get("all"));
-  } else if ( req.query.serialNumber !== "undefined" &&
-  req.query.deviceID == "undefined" && myCache.has(`${req.query.serialNumber}-data`) ) {
-    return res.status(200).send(myCache.get(`${req.query.serialNumber}-data`));
-  } else if (req.query.serialNumber !== "undefined" &&
-  req.query.deviceID !== "undefined" && myCache.has(`${req.query.serialNumber}-${req.query.deviceID}-data`) ) {
-    return res.status(200).send(myCache.get(`${req.query.serialNumber}-${req.query.deviceID}-data`));
+  if (myCache.has(`${req.query.page}-${req.query.serialNumber}-${req.query.deviceID}`)) {
+    return res.status(200).send(myCache.get(`${req.query.page}-${req.query.serialNumber}-${req.query.deviceID}`));
   } else {
     next();
   }  
@@ -144,25 +137,5 @@ export const getDeviceIDsCache = ( req: Request, res: Response, next: NextFuncti
     next();
   }
 }
-
-// used for testing postgresql database
-// export const testQuery = (req: Request, res: Response): void => {
-//   const sql: string = `SELECT "Serial_Number" FROM readings WHERE "Device_ID"=$1`;
-
-//   pool.query(sql, [`6dec0c5e`],(error: Error, results: QueryResult) => {
-//     if (error) {
-//       console.error("Error executing query", error.stack);
-//     }
-//     type SNObject = {
-//       Serial_Number: string;
-//     };
-//     const data = results.rows.map((item: SNObject) => item.Serial_Number);
-//     // console.log(data);
-
-//     res.status(200).json(data);
-
-//     // res.json(results.rows);
-//   });
-// };
 
 
