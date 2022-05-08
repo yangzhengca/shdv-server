@@ -1,23 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 const Pool = require("pg").Pool;
+import { QueryResult } from 'pg'
 import fs from "fs";
 import NodeCache from "node-cache";
+require('dotenv').config()
 
 
 // Initialize node-cache
-const myCache = new NodeCache({ stdTTL : 100 ,  checkperiod : 120 });
-
-
-// Provided database information
-// `host=smarthomes.postgres.database.azure.com port=5432 dbname=wattage user=smarthomesdashboarduser@smarthomes password=b5zT;q_fS\aAUtpD sslmode=require`
+const myCache = new NodeCache({ stdTTL : 3600 });
 
 // PostgreSQL connect config and create pool
 const pool = new Pool({
   host: "smarthomes.postgres.database.azure.com",
   port: 5432,
   database: "wattage",
-  user: "smarthomesdashboarduser@smarthomes",
-  password: "b5zT;q_fS\\aAUtpD",
+  user: process.env.DB_USER,
+  password: process.env.DB_PWD,
   sslmode: require,
   ssl: {
     rejectUnauthorized: false,
@@ -35,7 +33,7 @@ export const getData = (req: Request, res: Response): void => {
     const sql: string = `SELECT SUM("Wattage") AS "Wattage", "DateTime"
     FROM readings WHERE "Serial_Number"=$1 GROUP BY "DateTime" ORDER BY "DateTime";`;
 
-    pool.query(sql, [`${req.query.serialNumber}`], (error: Error, results: any) => {
+    pool.query(sql, [`${req.query.serialNumber}`], (error: Error, results: QueryResult) => {
       if (error) {
         console.error("Error executing query", error.stack);
       }
@@ -48,7 +46,7 @@ export const getData = (req: Request, res: Response): void => {
     const sql: string = `SELECT SUM("Wattage") AS "Wattage", "DateTime"
     FROM readings WHERE "Serial_Number"=$1 AND "Device_ID"=$2 GROUP BY "DateTime" ORDER BY "DateTime";`;
 
-    pool.query(sql, [`${req.query.serialNumber}`,`${req.query.deviceID}`], (error: Error, results: any) => {
+    pool.query(sql, [`${req.query.serialNumber}`,`${req.query.deviceID}`], (error: Error, results: QueryResult) => {
       if (error) {
         console.error("Error executing query", error.stack);
       }
@@ -60,7 +58,7 @@ export const getData = (req: Request, res: Response): void => {
     const sql: string = `SELECT SUM("Wattage") AS "Wattage", "DateTime"
     FROM readings GROUP BY "DateTime" ORDER BY "DateTime";`;
 
-    pool.query(sql, (error: Error, results: any) => {
+    pool.query(sql, (error: Error, results: QueryResult) => {
       if (error) {
         console.error("Error executing query", error.stack);
       }
@@ -93,7 +91,7 @@ export const getDataCache = ( req: Request, res: Response, next: NextFunction ) 
 export const getSerialNumbers = (req: Request, res: Response): void => {
   const sql: string = `SELECT DISTINCT "Serial_Number" FROM readings`;
 
-  pool.query(sql, (error: Error, results: any) => {
+  pool.query(sql, (error: Error, results: QueryResult) => {
     if (error) {
       console.error("Error executing query", error.stack);
     }
@@ -120,7 +118,7 @@ export const getDeviceIDs = (req: Request, res: Response): void => {
 
   const sql: string = `SELECT DISTINCT "Device_ID" FROM readings WHERE "Serial_Number" = $1`;
 
-  pool.query(sql, [`${SN}`], (error: Error, results: any) => {
+  pool.query(sql, [`${SN}`], (error: Error, results: QueryResult) => {
     if (error) {
       console.error("Error executing query", error.stack);
     }
@@ -151,7 +149,7 @@ export const getDeviceIDsCache = ( req: Request, res: Response, next: NextFuncti
 // export const testQuery = (req: Request, res: Response): void => {
 //   const sql: string = `SELECT "Serial_Number" FROM readings WHERE "Device_ID"=$1`;
 
-//   pool.query(sql, [`6dec0c5e`],(error: Error, results: any) => {
+//   pool.query(sql, [`6dec0c5e`],(error: Error, results: QueryResult) => {
 //     if (error) {
 //       console.error("Error executing query", error.stack);
 //     }
