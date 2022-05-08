@@ -29,6 +29,9 @@ export const getData = (req: Request, res: Response): void => {
   // calculate offset value
   const offSet = (Number(req.query.page)-1)*1440;
 
+  // // check query string in terminal
+  // console.log(req.query);
+  
   // only have serial number in query string
   if (req.query.serialNumber !== "" &&
   req.query.deviceID == "") {
@@ -56,7 +59,7 @@ export const getData = (req: Request, res: Response): void => {
       res.status(200).json(results.rows);
     });
   } else {
-    // with no serial number or device ID in query string. (the situation which only have device ID in query string has prevent by the client logic. if use postman to override that, will return all data)
+    // with empty serial number or device ID in query string. (the situation which only have device ID in query string has prevent by the client logic. if use postman to override that, will return all data)
     const sql: string = `SELECT SUM("Wattage") AS "Wattage", "DateTime"
     FROM readings GROUP BY "DateTime" ORDER BY "DateTime" DESC OFFSET ${offSet} LIMIT 1440;`;
 
@@ -118,6 +121,7 @@ export const getDeviceIDs = (req: Request, res: Response): void => {
     type DIDObject = {
       Device_ID: string;
     };
+
     // filter device IDs only contain meaningful data, but device ID will have only two value, than there is no use to make this call.  
     // const data = results.rows.map((item: DIDObject) => item.Device_ID).filter((item: string) => item == "mains" || item == "always_on");
 
